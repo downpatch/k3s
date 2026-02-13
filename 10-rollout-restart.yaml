@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rollout-restart
+  namespace: downpatch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rollout-restart
+  namespace: downpatch
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rollout-restart
+  namespace: downpatch
+subjects:
+  - kind: ServiceAccount
+    name: rollout-restart
+roleRef:
+  kind: Role
+  name: rollout-restart
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restart-downpatch-hourly
+  namespace: downpatch
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: rollout-restart
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:1.30
+              command: ["sh","-c"]
+              args:
+                - kubectl -n downpatch rollout restart deployment/downpatch-web
