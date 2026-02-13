@@ -42,7 +42,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: kubectl
-              image: bitnami/kubectl:1.30
+              image: bitnami/kubectl:latest
               command: ["sh","-c"]
               args:
                 - kubectl -n downpatch rollout restart deployment/downpatch-web
